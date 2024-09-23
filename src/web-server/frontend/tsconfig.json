@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx", // Enables JSX in TSX files
+    "target": "es2016", // Update target to at least ES2016
+    "module": "ESNext", // Modern module syntax
+    "moduleResolution": "node", // Resolve node modules
+    "strict": true, // Enables strict type checking
+    "esModuleInterop": true, // Enables ES module interop for compatibility
+    "skipLibCheck": true, // Skips checking .d.ts files in libraries
+    "forceConsistentCasingInFileNames": true, // Enforce consistent file casing
+    "lib": ["dom", "es2016"] // Add the necessary libraries
+  },
+  "include": ["./src/**/*"], // Make sure the src folder is included
+  "exclude": ["node_modules", "dist"] // Exclude unnecessary directories
+}

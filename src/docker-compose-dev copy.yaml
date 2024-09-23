@@ -1,0 +1,40 @@
+services:
+  # this will download the models specified (if they already exists then it will skip downloading)
+  model_downloader: 
+    image: amikos/hf-model-downloader
+    env_file:
+      - .env  # Use environment variables from .env file
+    command: ${EMBEDDING_MODEL_NAME}
+    volumes:
+      - ./${DATA_DIR}/models:/models
+    environment:
+      - USE_CACHE=TRUE
+  
+  embeddings-server:
+    build: ./embeddings-server
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env  # Use environment variables from .env file
+    volumes:
+      - ./${DATA_DIR}:/data  # Mount shared data directory
+    ports:
+      - "8002:8002"  # Expose port for the embeddings server API    
+
+  app:
+    build: ./app-server
+    environment:
+      - PYTHONUNBUFFERED=1 # can be removed in production
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+    volumes:
+      - ./${DATA_DIR}:/app/data  # Shared data directory
+
+  web:
+    image: nginx:latest
+    ports:
+      - "3000:3000" # change to 80 in production
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf

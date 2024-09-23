@@ -1,0 +1,93 @@
+services:
+  # this downloads the model once on to host machine and exits
+  model_downloader: 
+    image: amikos/hf-model-downloader
+    env_file:
+      - .env  # Use environment variables from .env file
+    command: ${EMBEDDING_MODEL_NAME}
+    volumes:
+      - ./${DATA_DIR}/models:/models
+    environment:
+      - USE_CACHE=TRUE
+
+  # llm-server:
+  #   image: vllm/vllm-openai:latest
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ~/.cache/huggingface:/root/.cache/huggingface
+  #   env_file:
+  #     - .env
+  #   ipc: "host"
+  #   # comment if used in only cpu server environment. 
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - capabilities: [gpu]
+  #   runtime: nvidia
+  #   environment:
+  #     - LLM_MODEL_NAME=gpt-3.5-turbo
+  #     - DTYPE=float16  # Using FP16 precision for GPU
+  #     - VLLM_NUM_WORKERS=4  # 4 workers for serving requests
+  #     - VLLM_GPU_MEMORY_FRACTION=0.9  # Use 90% of GPU memory
+  #   command: ["--model", "${LLM_MODEL_NAME}", "--dtype", "${DTYPE}"]
+
+  embeddings-server:
+    build: 
+      context: ./embeddings-server
+      dockerfile: Dockerfile
+    image: rmrhub/sia-embeddings-server:v0.1.1
+    platforms:
+        - linux/amd64
+        - linux/arm64
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env  # Use environment variables from .env file
+    volumes:
+      - ./${DATA_DIR}:/data  # Mount shared data directory
+    depends_on:
+      - model_downloader
+    ports:
+      - "8002:8002"  # Expose port for the embeddings server API    
+
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    hostname: api-server # required for web-server to proxy_pass
+    image: rmrhub/sia-api-server:v0.1.1
+    platforms:
+        - linux/amd64
+        - linux/arm64
+    environment:
+      - PYTHONUNBUFFERED=1 # can be removed in production
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+    depends_on:
+      - embeddings-server
+    volumes:
+      - ./${DATA_DIR}:/app/data  # Shared data directory
+
+  web-server:
+    build:
+      context: ./web-server
+      dockerfile: Dockerfile
+    image: rmrhub/sia-web-server:v0.1.1
+    platforms:
+        - linux/amd64
+        - linux/arm64
+    ports:
+      - "3000:3000"
+      # Uncomment the following line to expose HTTPS port
+      # - "443:443"
+    depends_on:
+      - api-server
+    volumes:
+      - ./web-server/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Mount the SSL certificates directory (uncomment if using HTTPS)
+      # - ./ssl:/etc/nginx/ssl:ro
+  
