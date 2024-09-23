@@ -38,9 +38,6 @@ services:
       context: ./embeddings-server
       dockerfile: Dockerfile
     image: rmrhub/sia-embeddings-server:v0.1.1
-    platforms:
-        - linux/amd64
-        - linux/arm64
     environment:
       - PYTHONUNBUFFERED=1
     env_file:
@@ -58,9 +55,6 @@ services:
       dockerfile: Dockerfile
     hostname: api-server # required for web-server to proxy_pass
     image: rmrhub/sia-api-server:v0.1.1
-    platforms:
-        - linux/amd64
-        - linux/arm64
     environment:
       - PYTHONUNBUFFERED=1 # can be removed in production
     env_file:
@@ -77,9 +71,6 @@ services:
       context: ./web-server
       dockerfile: Dockerfile
     image: rmrhub/sia-web-server:v0.1.1
-    platforms:
-        - linux/amd64
-        - linux/arm64
     ports:
       - "3000:3000"
       # Uncomment the following line to expose HTTPS port
